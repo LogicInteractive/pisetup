@@ -55,7 +55,7 @@ ColorPurple(){
 }
 #END HELPER FUNCTIONS <<<<<<<<
 
-DEFAULTTAGNAME="4.3.1-bullseye"
+DEFAULTTAGNAME="4.3.7-bullseye"
 DOCKER='/usr/bin/docker'
 
 function installDocker {
