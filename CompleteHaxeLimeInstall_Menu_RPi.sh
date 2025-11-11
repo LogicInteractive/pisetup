@@ -88,7 +88,7 @@ function installHaxeFromDocker {
 
     if test -f "$DOCKER";
     then
-        Section "Installing haxe from docker" 
+        Section "Installing haxe from docker"
     else
         Warn "Installing docker first ..."
         installDocker
@@ -113,6 +113,65 @@ function installHaxeFromDocker {
 
         echo -en "\n$PURPLE>> "
         read -p "Please enter the haxe docker tagname to install [$DEFAULTTAGNAME]: " dockertagname
+        TAGNAME=${dockertagname:-$DEFAULTTAGNAME}
+        echo -en $WHITE"\n"
+
+        Line "running/getting docker image ${TAGNAME}";
+        docker run haxe:${TAGNAME}
+
+        Line "getting CONTAINERID"
+
+        CONTAINERID=`docker ps -aq --latest`
+
+        Line "copying from container: $CONTAINERID"
+        docker cp $CONTAINERID:/usr/local/bin/haxe ./docker_haxe/
+        docker cp $CONTAINERID:/usr/local/bin/haxelib ./docker_haxe/
+        docker cp $CONTAINERID:/usr/local/share/haxe/std  ./docker_haxe/
+
+        sleep 2
+
+        # create archive of binaries for future use
+        HAXEVERSION=$(haxe --version)
+        Line "creative haxe-binaries-$HAXEVERSION.tgz archive for future use"
+        tar zcf haxe-binaries-$HAXEVERSION.tgz ./docker_haxe
+
+        installHaxeFromDir "docker_haxe"
+
+    fi
+}
+
+function installHaxeFromDockerOlderVersion {
+
+    INSTALL=0
+
+    if test -f "$DOCKER";
+    then
+        Section "Installing older haxe version from docker"
+    else
+        Warn "Installing docker first ..."
+        installDocker
+    fi
+
+    if test -f "/usr/local/bin/haxe";
+    then
+        HAXEVERSION=$(haxe --version)
+        Confirm "It seems Haxe $HAXEVERSION is already installed, would you like to overwrite it"
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            INSTALL=1
+        fi
+    else
+        INSTALL=1
+    fi
+
+    if [ $INSTALL -eq 1 ];
+    then
+        mkdir -p ./docker_haxe/
+        sudo mkdir -p /usr/local/share/haxe/
+
+        echo -en "\n$PURPLE>> "
+        Line "Common older versions: 4.3.6-bullseye, 4.3.1-bullseye, 4.2.5-bullseye"
+        read -p "Please enter the haxe docker tagname to install: " dockertagname
         TAGNAME=${dockertagname:-$DEFAULTTAGNAME}
         echo -en $WHITE"\n"
 
@@ -224,20 +283,22 @@ function menu(){
     Section "Menu for installing Docker and Haxe"
     echo -ne \
 "$(ColorGreen '1)') Install Docker (needed for installing haxe)
-$(ColorGreen '2)') Install Haxe from Docker
+$(ColorGreen '2)') Install Haxe 4.3.7 from Docker (latest stable)
+$(ColorGreen '3)') Install older Haxe version from Docker
 $(ColorGreen '-- optional')
-$(ColorGreen '3)') Install Haxe from a Directory ( archived binaries from previous docker installed haxe )
-$(ColorGreen '4)') Enable Hxcpp Compile Cache (Experimental)
-$(ColorGreen '5)') About
+$(ColorGreen '4)') Install Haxe from a Directory ( archived binaries from previous docker installed haxe )
+$(ColorGreen '5)') Enable Hxcpp Compile Cache (Experimental)
+$(ColorGreen '6)') About
 $(ColorGreen '0)') Exit
 $(ColorPurple '>>  Choose an option:') "
         read a
         case $a in
             1) clear -x;installDocker ; menu ;;
             2) clear -x;installHaxeFromDocker ; menu ;;
-            3) clear -x;installHaxeFromDir; menu ;;
-            4) clear -x;enableHxcppCompileCache ; menu ;;
-            5) clear -x;about ; menu ;;
+            3) clear -x;installHaxeFromDockerOlderVersion ; menu ;;
+            4) clear -x;installHaxeFromDir; menu ;;
+            5) clear -x;enableHxcppCompileCache ; menu ;;
+            6) clear -x;about ; menu ;;
         0) exit 0 ;;
         *) clear -x;echo -e $RED" Wrong option: "$a$CLEAR; menu;;
         esac
