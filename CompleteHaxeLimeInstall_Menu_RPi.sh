@@ -198,70 +198,6 @@ function installHaxeFromDir {
 
 }
 
-function installOpenFL {
-
-    Section "Installing OpenFL"
-
-    haxelib install format
-    haxelib install hxp
-    haxelib install hxcpp
-    haxelib install openfl
-    if [ ! -f /usr/local/bin/openfl ]; then
-        haxelib run openfl setup
-    fi
-
-    haxelib install flixel-tools
-
-    if [ ! -f /usr/bin/flixel ]; then
-      haxelib run flixel-tools setup
-    fi
-}
-
-function installLimeGit {
-
-    INSTALL=0
-    Section "Installing Lime fron Git" 
-
-    Line "installing some dependencies so we can compile lime"
-    sudo apt install -y build-essential git
-    sudo apt install -y libdrm-dev libgbm-dev libx11-dev libxext-dev libgles2-mesa-dev libasound2-dev libudev-dev
-    sudo apt install -y libxcursor-dev libxinerama-dev libxi-dev libxrandr-dev libdbus-1-dev libpulse-dev
-
-    echo -en "\n$PURPLE>> "
-    read -p "Enter a path to install lime [~/Development/haxe/dev]: " dirname
-    installdir=${dirname:-~/Development/haxe/dev}
-    Line "creating $installdir"
-    mkdir -p $installdir
-    cd $installdir
-
-    if test -d "$installdir/lime";
-    then
-        Confirm "There already is a lime directory at $installdir/lime.\n*  Would you like to rename it and continue "
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            DATEPOSTFIX=$(date +%F)
-            mv $installdir/lime "$installdir/lime_$DATEPOSTFIX"
-            INSTALL=1
-        fi
-    else
-        INSTALL=1
-    fi
-
-    if [ $INSTALL -eq 1 ];
-    then
-        echo -en '\n'$PURPLE
-        read -p "Enter the Branch you want to checkout [8.2.0-Dev]: " branchname
-        branch=${branchname:-8.2.0-Dev}
-        Line "Checking out branch $branch"
-        echo -en $WHITE
-        git clone --recursive https://github.com/openfl/lime -b $branch
-
-        Line "Rebuilding lime for Raspberry Pi"
-        haxelib dev lime lime
-        cd 'lime'
-        lime rebuild lime linux -rpi -v
-    fi
-}
-
 function enableHxcppCompileCache {
     Line "checking for /home/$USER/.hxcpp_config.xml"
     if test -f /home/$USER/.hxcpp_config.xml
@@ -281,31 +217,27 @@ function enableHxcppCompileCache {
 }
 
 function about {
-    Section "This script was created to setup Haxe,Lime and OpenFL on a Raspberry Pi 3B+ or 4B  running piOS (Raspbian Bullseye) \n* Your Raspberry Pi needs to have the (F)KMS driver overlay enabled\n* Lime applications build for native (hxcpp) can run from the commandline and on X11\n*\n* Gepatto 2023 - Find me on haxe or openfl discord"
+    Section "This script was created to setup Haxe on a Raspberry Pi 3B+ or 4B running piOS (Raspbian Bullseye) \n*\n* Gepatto 2023 - Find me on haxe or openfl discord"
 }
 
 function menu(){
-    Section "Menu for installing Docker, Haxe, OpenFL or Lime"
+    Section "Menu for installing Docker and Haxe"
     echo -ne \
 "$(ColorGreen '1)') Install Docker (needed for installing haxe)
 $(ColorGreen '2)') Install Haxe from Docker
-$(ColorGreen '3)') Install and setup openFL
-$(ColorGreen '4)') Install Lime from Github
 $(ColorGreen '-- optional')
-$(ColorGreen '5)') Install Haxe from a Directory ( archived binaries from previous docker installed haxe )
-$(ColorGreen '6)') Enable Hxcpp Compile Cache (Experimental)
-$(ColorGreen '7)') About
+$(ColorGreen '3)') Install Haxe from a Directory ( archived binaries from previous docker installed haxe )
+$(ColorGreen '4)') Enable Hxcpp Compile Cache (Experimental)
+$(ColorGreen '5)') About
 $(ColorGreen '0)') Exit
 $(ColorPurple '>>  Choose an option:') "
         read a
         case $a in
             1) clear -x;installDocker ; menu ;;
             2) clear -x;installHaxeFromDocker ; menu ;;
-            3) clear -x;installOpenFL ; menu ;;
-            4) clear -x;installLimeGit ; menu ;;
-            5) clear -x;installHaxeFromDir; menu ;;
-            6) clear -x;enableHxcppCompileCache ; menu ;;
-            7) clear -x;about ; menu ;;
+            3) clear -x;installHaxeFromDir; menu ;;
+            4) clear -x;enableHxcppCompileCache ; menu ;;
+            5) clear -x;about ; menu ;;
         0) exit 0 ;;
         *) clear -x;echo -e $RED" Wrong option: "$a$CLEAR; menu;;
         esac
